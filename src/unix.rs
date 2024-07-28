@@ -19,7 +19,7 @@ use std::os::unix::prelude::*;
 )))]
 fn pipe2_cloexec() -> io::Result<(OwnedFd, OwnedFd)> {
     let mut fds: [c_int; 2] = [0; 2];
-    let res = unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) };
+    let res = unsafe { libc::pipe2(fds.as_mut_ptr(), 0)};
     if res != 0 {
         return Err(io::Error::last_os_error());
     }
@@ -42,14 +42,6 @@ fn pipe2_cloexec() -> io::Result<(OwnedFd, OwnedFd)> {
     // Wrap the fds immediately, so that we'll drop them and close them in the unlikely event that
     // any of the following fcntls fails.
     let owned_fds = unsafe { (OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])) };
-    let res = unsafe { libc::fcntl(fds[0], libc::F_SETFD, libc::FD_CLOEXEC) };
-    if res != 0 {
-        return Err(io::Error::last_os_error());
-    }
-    let res = unsafe { libc::fcntl(fds[1], libc::F_SETFD, libc::FD_CLOEXEC) };
-    if res != 0 {
-        return Err(io::Error::last_os_error());
-    }
     Ok(owned_fds)
 }
 
